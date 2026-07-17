@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>HB Move Management — Services Calculator</title>
+<style>
+  :root {
+    --bg: #0F1923;
+    --surface: #1A2733;
+    --surface2: #223040;
+    --surface3: #2A3A4A;
+    --blue: #2E86C1;
+    --blue-bright: #3FA0E0;
+    --blue-light: #5BB8F5;
+    --blue-glow: rgba(46,134,193,0.25);
+    --text: #F0F6FB;
+    --text-dim: #8AAFC8;
+    --text-muted: #4D7A9A;
+    --border: #2A3D52;
+    --border-bright: #3A5570;
+    --red: #E74C3C;
+    --purple: #9B59B6;
+    --teal: #1A7A8C;
+    --warn-bg: #2A2010;
+    --warn-border: #C09020;
+    --warn-text: #F0C040;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-pill: 30px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(180deg, #1A3A5C 0%, #0F1923 100%);
+    padding: 20px 20px 18px;
+    border-bottom: 1px solid var(--border-bright);
+  }
+  .header-inner { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .header-text h1 { color: var(--text); font-size: 17px; font-weight: 800; letter-spacing: 0.3px; }
+  .header-text p { color: var(--blue-light); font-size: 11px; margin-top: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .header-customer { flex-shrink: 0; text-align: right; }
+  .header-customer label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--blue-bright); margin-bottom: 5px; }
+  .header-customer input {
+    width: 220px; padding: 10px 12px;
+    border: 1px solid var(--border-bright); border-radius: var(--radius-sm);
+    font-size: 16px; font-weight: 600; color: #fff;
+    background: var(--surface2); text-align: left; -webkit-appearance: none;
+  }
+  .header-customer input:focus { outline: none; border-color: var(--blue-bright); background: var(--surface3); }
+  .header-customer input::placeholder { color: var(--text-muted); font-weight: 400; }
+
+  .page { padding: 16px; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.2px; color: var(--blue-light);
+    margin: 20px 0 8px 4px;
+  }
+  .section-label:first-child { margin-top: 4px; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--blue-light);
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-title.white { color: var(--text); }
+
+  /* INTERNAL CARD — dashed */
+  .internal-card {
+    background: var(--surface);
+    border: 1.5px dashed var(--border-bright);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+
+  /* RATE BAND */
+  .rate-selector { display: flex; gap: 8px; }
+  .rate-btn {
+    flex: 1; padding: 12px 6px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; text-align: center; line-height: 1.4;
+    color: var(--text-dim); transition: all 0.15s;
+  }
+  .rate-btn .rate-price { font-size: 9px; font-weight: 500; opacity: 0.65; margin-top: 3px; }
+  .rate-btn.red-btn { border-color: var(--red); color: var(--red); }
+  .rate-btn.red-btn.selected { background: var(--red); color: #fff; }
+  .rate-btn.purple-btn { border-color: var(--purple); color: var(--purple); }
+  .rate-btn.purple-btn.selected { background: var(--purple); color: #fff; }
+  .rate-btn.blue-btn { border-color: var(--blue-bright); color: var(--blue-bright); }
+  .rate-btn.blue-btn.selected { background: var(--blue-bright); color: #fff; }
+  .rate-btn.selected .rate-price { opacity: 0.85; }
+  .standard-badge {
+    font-size: 8px; background: rgba(255,255,255,0.25); color: #fff;
+    border-radius: 3px; padding: 1px 4px; margin-left: 3px; vertical-align: middle;
+  }
+
+  /* WEIGHT + RULES */
+  .weight-rules-row { display: flex; gap: 10px; align-items: flex-start; }
+  .weight-input-wrap { flex-shrink: 0; }
+  .weight-input-wrap label {
+    display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: #fff; margin-bottom: 6px;
+  }
+  .weight-input-wrap input { color: #fff; }
+  .rule-row { color: #fff; background: var(--surface2); }
+  .weight-input-wrap input {
+    width: 160px; padding: 11px 10px;
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-sm);
+    font-size: 18px; font-weight: 700;
+    color: var(--text); background: var(--surface2);
+    text-align: center; -webkit-appearance: none;
+    transition: all 0.2s;
+  }
+  .weight-input-wrap input:focus { outline: none; border-color: var(--blue-bright); background: var(--surface3); }
+  .weight-input-wrap input.flagged { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+  .rules-box { flex: 1; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .rule-row {
+    padding: 8px 10px; border-bottom: 1px solid var(--border);
+    color: var(--blue-bright); background: var(--surface2);
+    font-size: 11px; line-height: 1.3; transition: all 0.2s;
+  }
+  .rule-row:last-child { border-bottom: none; }
+  .rule-row.flagged { color: #AADD00; font-weight: 700; }
+  .weight-input-wrap input.flagged { border-color: #AADD00; color: #AADD00; background: var(--surface2); }
+  /* MODE TABS */
+  .mode-tabs {
+    display: flex; gap: 5px; margin-bottom: 16px;
+    background: var(--bg); border-radius: var(--radius-pill); padding: 4px;
+  }
+  .mode-tab {
+    flex: 1; padding: 8px 4px; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px; text-align: center;
+    cursor: pointer; border: none; background: none;
+    color: var(--text-muted); border-radius: var(--radius-pill); transition: all 0.18s;
+  }
+  .mode-tab.active { background: var(--blue); color: #fff; box-shadow: 0 2px 10px var(--blue-glow); }
+
+  /* BOX TABLE */
+  .box-table { width: 100%; border-collapse: collapse; }
+  .box-table th {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-muted); padding: 6px 4px;
+    border-bottom: 1px solid var(--border); text-align: center;
+  }
+  .box-table th:first-child { text-align: left; }
+  .box-table td { padding: 5px 4px; border-bottom: 1px solid var(--border); }
+  .box-table tr:last-child td { border-bottom: none; }
+  .box-table td:first-child { font-size: 13px; font-weight: 500; color: var(--text); }
+  .box-table input {
+    width: 100%; padding: 11px 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 15px; font-weight: 700;
+    color: var(--text); background: var(--surface2);
+    text-align: center; -webkit-appearance: none;
+  }
+  .box-table input:focus { outline: none; border-color: var(--blue-bright); background: var(--surface3); }
+  .col-label-cb { color: var(--red); font-weight: 700; }
+  .col-label-bin { color: #4EC9E0; font-weight: 700; }
+
+  .mode-note {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 12px;
+    font-size: 12px; color: #B0CDE0; margin-top: 10px; line-height: 1.5;
+  }
+  .mode-note strong { color: var(--text); }
+
+  /* CALCULATE BUTTON */
+  .calc-btn {
+    width: 100%; padding: 17px;
+    background: linear-gradient(135deg, #1A6FA8 0%, #2E86C1 100%);
+    color: #fff; border: none;
+    border-radius: var(--radius-pill);
+    font-size: 16px; font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer; margin-top: 4px;
+    box-shadow: 0 4px 20px var(--blue-glow);
+    transition: all 0.15s;
+  }
+  .calc-btn:active { transform: scale(0.98); box-shadow: 0 2px 8px var(--blue-glow); }
+
+  /* RESULTS */
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .result-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px; text-align: center;
+  }
+  .result-card .rc-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+  .result-card .rc-value { font-size: 26px; font-weight: 600; color: var(--text); margin: 5px 0 3px; }
+  .result-card .rc-sub { font-size: 9px; color: var(--text-muted); }
+  .result-card.highlight {
+    background: linear-gradient(135deg, #0D2A40 0%, #1A3D5C 100%);
+    border-color: var(--blue);
+  }
+  .result-card.highlight .rc-value { color: #FFFFFF; }
+  .result-card.highlight .rc-label { color: #FFFFFF; opacity: 0.75; }
+  .result-card.highlight .rc-sub { color: #FFFFFF; opacity: 0.6; }
+  .result-card.warn-card { background: var(--surface2); border: 2px solid #AADD00; }
+  .result-card.warn-card .rc-label { color: #AADD00; opacity: 0.8; }
+  .result-card.warn-card .rc-value { color: #AADD00; font-size: 20px; }
+  .result-card.warn-card .rc-sub { color: #AADD00; }
+
+  /* CREW BUTTONS */
+  .crew-result-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; }
+  .crew-res-btn {
+    flex-shrink: 0; min-width: 66px; padding: 9px 6px;
+    border: 1.5px solid var(--border-bright); border-radius: var(--radius-sm);
+    background: var(--surface2); font-size: 11px; font-weight: 600;
+    cursor: pointer; color: var(--text-dim); text-align: center; transition: all 0.15s;
+  }
+  .crew-res-btn .crew-rate { font-size: 9px; margin-top: 3px; color: var(--text-muted); }
+  .crew-res-btn.selected {
+    background: var(--blue); color: #fff; border-color: var(--blue);
+    box-shadow: 0 2px 10px var(--blue-glow);
+  }
+  .crew-res-btn.selected .crew-rate { color: rgba(255,255,255,0.75); }
+
+  /* PLAIN NOTE */
+  .plain-note {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 12px; color: #B0CDE0; line-height: 1.7;
+  }
+  .plain-note strong { color: #fff; }
+
+  /* ALERT */
+  .alert-box {
+    background: var(--surface2); border: 1px solid #AADD00;
+    border-radius: var(--radius-sm); padding: 10px 12px;
+    font-size: 12px; color: #AADD00; font-weight: 600;
+    margin-bottom: 10px; line-height: 1.5;
+  }
+  .alert-box strong { display: block; margin-bottom: 2px; font-size: 13px; }
+
+  /* STEP ROWS */
+  .step-rows { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .step-row { padding: 13px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .step-row:last-child { border-bottom: none; }
+  .step-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--blue-light); margin-bottom: 8px;
+  }
+  .step-body { font-size: 12px; color: #D0E8F5; line-height: 1.7; }
+  .step-body strong { color: #fff; }
+
+  /* FEE CELLS */
+  .fee-row { display: flex; gap: 6px; margin-top: 8px; }
+  .fee-cell {
+    flex-shrink: 0; min-width: 66px; padding: 9px 6px;
+    border-radius: var(--radius-sm); border: 1.5px solid;
+    background: var(--surface); text-align: center; transition: all 0.15s;
+  }
+  .fee-cell .fc-band { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+  .fee-cell .fc-price { font-size: 11px; font-weight: 700; }
+  .fee-cell .fc-note { font-size: 8px; margin-top: 2px; opacity: 0.8; }
+  .fee-cell.red-cell { border-color: var(--red); color: var(--red); }
+  .fee-cell.red-cell.selected { background: var(--red); color: #fff; }
+  .fee-cell.purple-cell { border-color: var(--purple); color: var(--purple); }
+  .fee-cell.purple-cell.selected { background: var(--purple); color: #fff; }
+  .fee-cell.blue-cell { border-color: var(--blue-bright); color: var(--blue-bright); }
+  .fee-cell.blue-cell.selected { background: var(--blue-bright); color: #fff; }
+  .fee-cell.selected .fc-note { opacity: 0.85; }
+
+  /* SESSION TABLE */
+  .session-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .session-table th {
+    font-size: 11px; font-weight: 700; padding: 8px 6px;
+    border-bottom: 1px solid var(--border); text-align: center; color: var(--text-dim);
+  }
+  .session-table th:first-child { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+  .session-table th.th-red { color: var(--red); }
+  .session-table th.th-purple { color: var(--purple); }
+  .session-table th.th-blue { color: var(--blue-bright); }
+  .session-table td { font-size: 12px; padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-dim); }
+  .session-table td:first-child { text-align: left; color: var(--text); }
+  .session-table tr:last-child td { border-bottom: none; }
+  .session-table td.td-red { color: var(--red); font-weight: 700; }
+  .session-table td.td-purple { color: var(--purple); font-weight: 700; }
+  .session-table td.td-blue { color: var(--blue-bright); font-weight: 700; }
+
+  /* BOTTOM BUTTONS */
+  .bottom-btns { display: flex; gap: 10px; margin-top: 4px; }
+  .print-btn {
+    flex: 1; padding: 14px;
+    background: linear-gradient(135deg, #1A6FA8 0%, #2E86C1 100%);
+    color: #fff; border: none; border-radius: var(--radius-pill);
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 3px 12px var(--blue-glow);
+  }
+  .reset-btn {
+    flex: 1; padding: 14px; background: none;
+    border: 1.5px solid var(--border-bright); border-radius: var(--radius-pill);
+    font-size: 13px; color: var(--text-muted); cursor: pointer;
+  }
+
+  #results-section { display: none; }
+
+  @media print {
+    @page { margin: 0.5in; }
+    * { color: #000 !important; background: #fff !important; border-color: #ccc !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; font-size: 10px; }
+    header { background: #1B2A4A !important; border-radius: 0; padding: 10px 14px 8px; }
+    header h1, header p, .header-text h1, .header-text p, .header-customer label { color: #fff !important; }
+    header h1 { font-size: 14px !important; }
+    header p { font-size: 9px !important; }
+    .header-customer label { font-size: 8px !important; margin-bottom: 2px; }
+    .header-customer input { display: none !important; }
+    #customer-name-print { display: block !important; color: #fff !important; font-size: 13px !important; font-weight: 700 !important; background: transparent !important; }
+    .calc-btn, .bottom-btns, .mode-tabs { display: none !important; }
+    .page { padding: 6px 0 0 0; }
+    .section-label { font-size: 8px !important; margin: 6px 0 3px 2px !important; color: #333 !important; }
+    .card, .internal-card { padding: 8px 10px !important; margin-bottom: 5px !important; border: 1px solid #ccc !important; border-radius: 6px !important; break-inside: avoid; }
+    .card-title { font-size: 8px !important; margin-bottom: 6px !important; padding-bottom: 4px !important; color: #000 !important; }
+    /* Rate band — compact row */
+    .rate-selector { gap: 6px; }
+    .rate-btn { padding: 5px 4px !important; font-size: 10px !important; border-radius: 4px !important; }
+    .rate-btn .rate-price { font-size: 8px !important; }
+    /* Weight + rules */
+    .weight-input-wrap label { font-size: 8px !important; margin-bottom: 2px !important; color: #000 !important; }
+    .weight-input-wrap input { font-size: 13px !important; padding: 4px 6px !important; width: 90px !important; color: #000 !important; background: #f4f4f4 !important; }
+    .rule-row { padding: 4px 8px !important; font-size: 9px !important; color: #000 !important; background: #f9f9f9 !important; }
+    /* Box table */
+    .box-table th { font-size: 8px !important; padding: 3px 4px !important; }
+    .box-table td { padding: 3px 4px !important; border-bottom: 1px solid #eee !important; }
+    .box-table td:first-child { font-size: 10px !important; }
+    .box-table input { padding: 3px 4px !important; font-size: 11px !important; background: #f4f4f4 !important; color: #000 !important; border: 1px solid #ccc !important; border-radius: 3px !important; }
+    .mode-note { padding: 4px 8px !important; font-size: 9px !important; color: #000 !important; background: #f4f4f4 !important; margin-top: 5px !important; }
+    /* Internal move */
+    .internal-card { border: 1px dashed #999 !important; padding: 6px 10px !important; }
+    .internal-card .card-title { font-size: 8px !important; }
+    .internal-card span { font-size: 10px !important; }
+    .internal-card input { font-size: 11px !important; padding: 3px 6px !important; background: #f4f4f4 !important; color: #000 !important; }
+    /* Alert */
+    .alert-box { padding: 5px 8px !important; font-size: 9px !important; border: 1px solid #666 !important; background: #f4f4f4 !important; margin-bottom: 5px !important; }
+    .alert-box strong { font-size: 10px !important; }
+    /* Results grid */
+    .result-grid { gap: 5px !important; margin-bottom: 6px !important; }
+    .result-card { padding: 6px 8px !important; border-radius: 4px !important; background: #f4f4f4 !important; border: 1px solid #ccc !important; }
+    .result-card .rc-label { font-size: 7px !important; }
+    .result-card .rc-value { font-size: 18px !important; margin: 2px 0 !important; color: #000 !important; }
+    .result-card .rc-sub { font-size: 7px !important; }
+    .result-card.highlight { background: #e8f0f8 !important; border: 1px solid #999 !important; }
+    .result-card.warn-card { background: #f8f8f8 !important; border: 2px solid #555 !important; }
+    /* Crew buttons */
+    .crew-result-scroll { gap: 4px !important; margin-bottom: 6px !important; flex-wrap: wrap !important; overflow: visible !important; }
+    .crew-res-btn { min-width: 54px !important; padding: 5px 4px !important; font-size: 9px !important; border-radius: 4px !important; }
+    .crew-res-btn .crew-rate { font-size: 7px !important; }
+    .crew-res-btn.selected { background: #ddd !important; border-color: #555 !important; }
+    .plain-note { padding: 5px 8px !important; font-size: 9px !important; color: #000 !important; background: #f4f4f4 !important; }
+    /* Step rows */
+    .step-rows { border: 1px solid #ccc !important; border-radius: 4px !important; }
+    .step-row { padding: 6px 10px !important; background: #fff !important; border-bottom: 1px solid #ddd !important; }
+    .step-label { font-size: 8px !important; margin-bottom: 4px !important; color: #000 !important; }
+    .step-body { font-size: 9px !important; color: #000 !important; line-height: 1.4 !important; }
+    /* Fee cells */
+    .fee-row { gap: 4px !important; margin-top: 5px !important; }
+    .fee-cell { min-width: 54px !important; padding: 4px !important; border-radius: 3px !important; }
+    .fee-cell .fc-band { font-size: 7px !important; }
+    .fee-cell .fc-price { font-size: 9px !important; }
+    .fee-cell .fc-note { font-size: 7px !important; }
+    .fee-cell.selected { background: #ddd !important; }
+    /* Session table */
+    .session-table th { font-size: 9px !important; padding: 4px 5px !important; color: #000 !important; }
+    .session-table td { font-size: 9px !important; padding: 4px 5px !important; color: #000 !important; }
+    select { font-size: 9px !important; padding: 3px !important; color: #000 !important; background: #f4f4f4 !important; border: 1px solid #ccc !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-text">
+      <h1>Hansen Bros. Move Management</h1>
+      <p>Services Calculator</p>
+    </div>
+    <div class="header-customer">
+      <label>Customer Name</label>
+      <input type="text" id="customer-name" placeholder="Last name" maxlength="40" oninput="document.getElementById('customer-name-print').textContent=this.value">
+      <span id="customer-name-print" style="display:none;font-size:13px;font-weight:700;color:#fff;"></span>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+  <div class="section-label">Rate Band</div>
+  <div class="card">
+    <div class="rate-selector">
+      <button class="rate-btn red-btn" onclick="selectRate('red',this)">Red<div class="rate-price">$139.15/hr</div></button>
+      <button class="rate-btn purple-btn selected" onclick="selectRate('purple',this)">Purple <span class="standard-badge">Std</span><div class="rate-price">$141.65/hr</div></button>
+      <button class="rate-btn blue-btn" onclick="selectRate('blue',this)">Blue<div class="rate-price">$149.40/hr</div></button>
+    </div>
+  </div>
+
+  <div class="section-label">Estimated Weight &amp; Job Rules</div>
+  <div class="card">
+    <div class="weight-rules-row">
+      <div class="weight-input-wrap">
+        <label>Est. Weight (lbs)</label>
+        <input type="number" id="move-weight" placeholder="0" min="0" inputmode="numeric" oninput="updateRules()">
+      </div>
+      <div class="rules-box">
+        <div class="rule-row" id="rule-weight">Over 6,000 lbs — cardboard required</div>
+        <div class="rule-row" id="rule-stairs">2+ flights of stairs — cardboard required</div>
+        <div class="rule-row" id="rule-unpack">6 hr max unpack on move day — check building stop time</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Box Counts from Survey</div>
+  <div class="card">
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-bins" onclick="setMode('bins',this)">Convert to Bins</button>
+      <button class="mode-tab" id="tab-combo" onclick="setMode('combo',this)">Combo Bins + Cardboard</button>
+      <button class="mode-tab" id="tab-cb" onclick="setMode('cb',this)">Cardboard Only</button>
+    </div>
+
+    <div id="mode-bins">
+      <table class="box-table">
+        <thead><tr><th>Type / Size</th><th>Qty</th></tr></thead>
+        <tbody>
+          <tr><td>Dishpack (dishes)</td><td><input type="number" id="bins-dishd" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Dishpack (lamp)</td><td><input type="number" id="bins-dishl" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>1.5 cu</td><td><input type="number" id="bins-1-5" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>1.5 cu (books)</td><td><input type="number" id="bins-books" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>3 cu</td><td><input type="number" id="bins-3" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>4.5 cu</td><td><input type="number" id="bins-4-5" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>6.0 cu</td><td><input type="number" id="bins-6" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Mirror Carton</td><td><input type="number" id="bins-mirror" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Microwave / PC</td><td><input type="number" id="bins-micro" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Wardrobe</td><td><input type="number" id="bins-wardrobe" placeholder="0" min="0" inputmode="numeric"></td></tr>
+        </tbody>
+      </table>
+      <div class="mode-note">All materials convert to bins.</div>
+    </div>
+
+    <div id="mode-combo" style="display:none;">
+      <table class="box-table">
+        <thead><tr><th>Type / Size</th><th class="col-label-cb">Cardboard</th><th class="col-label-bin">Bins</th></tr></thead>
+        <tbody>
+          <tr><td>Dishpack (dishes)</td><td><input type="number" id="combo-cb-dishd" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-dishd" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Dishpack (lamp)</td><td><input type="number" id="combo-cb-dishl" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-dishl" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>1.5 cu</td><td><input type="number" id="combo-cb-1-5" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-1-5" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>1.5 cu (books)</td><td><input type="number" id="combo-cb-books" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-books" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>3 cu</td><td><input type="number" id="combo-cb-3" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-3" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>4.5 cu</td><td><input type="number" id="combo-cb-4-5" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-4-5" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>6.0 cu</td><td><input type="number" id="combo-cb-6" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-6" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Mirror Carton</td><td><input type="number" id="combo-cb-mirror" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-mirror" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Microwave / PC</td><td><input type="number" id="combo-cb-micro" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-micro" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Wardrobe</td><td><input type="number" id="combo-cb-wardrobe" placeholder="0" min="0" inputmode="numeric"></td><td><input type="number" id="combo-bin-wardrobe" placeholder="0" min="0" inputmode="numeric"></td></tr>
+        </tbody>
+      </table>
+      <div class="mode-note">Cardboard stays on estimate. No bypass needed. Use MIS button: <strong>(QTY) Packing Bins @ $3.50</strong></div>
+    </div>
+
+    <div id="mode-cb" style="display:none;">
+      <table class="box-table">
+        <thead><tr><th>Type / Size</th><th>Qty</th></tr></thead>
+        <tbody>
+          <tr><td>Dishpack (dishes)</td><td><input type="number" id="cb-dishd" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Dishpack (lamp)</td><td><input type="number" id="cb-dishl" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>1.5 cu</td><td><input type="number" id="cb-1-5" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>1.5 cu (books)</td><td><input type="number" id="cb-books" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>3 cu</td><td><input type="number" id="cb-3" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>4.5 cu</td><td><input type="number" id="cb-4-5" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>6.0 cu</td><td><input type="number" id="cb-6" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Mirror Carton</td><td><input type="number" id="cb-mirror" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Microwave / PC</td><td><input type="number" id="cb-micro" placeholder="0" min="0" inputmode="numeric"></td></tr>
+          <tr><td>Wardrobe</td><td><input type="number" id="cb-wardrobe" placeholder="0" min="0" inputmode="numeric"></td></tr>
+        </tbody>
+      </table>
+      <div class="mode-note">Cardboard materials are already on the estimate. No bypass or MIS bin line needed.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Internal Move — Bins Only</div>
+  <div class="internal-card">
+    <div class="card-title">Section 2 — For Internal Moves Only</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+      <span style="font-size:13px;font-weight:600;color:var(--text);">Number of Bins</span>
+      <input type="number" id="internal-bins" placeholder="0" min="0" inputmode="numeric"
+        style="width:100px;padding:10px;border:1px solid var(--border-bright);border-radius:var(--radius-sm);font-size:17px;font-weight:700;color:var(--text);background:var(--surface2);text-align:center;-webkit-appearance:none;">
+    </div>
+    <div class="mode-note">Bins are not converted. Max 20–30 typical. Hours included in total output.</div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">Calculate</button>
+
+  <!-- RESULTS -->
+  <div id="results-section">
+
+    <div id="alert-weight" class="alert-box" style="display:none;margin-top:14px;">
+      <strong>⚠ Over 6,000 lbs</strong>Cardboard required for this job.
+    </div>
+    <div id="alert-bins" class="alert-box" style="display:none;">
+      <strong>⚠ Bin Count Exceeds 75</strong>A second unpack day is required.
+    </div>
+
+    <div class="section-label">Crew Hours</div>
+    <div class="card">
+      <div class="result-grid" id="hours-grid"></div>
+      <div class="crew-result-scroll" id="crew-result-scroll"></div>
+      <div class="plain-note">Add time for travel and access.</div>
+    </div>
+
+    <div class="section-label">Estimate Lines — Bottom Left (MIS Button)</div>
+    <div class="card">
+      <div class="step-rows">
+
+        <div class="step-row">
+          <div class="step-label">Line 1 — Add Packing Bins</div>
+          <div class="step-body" id="step1-body">—</div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-label">Line 2 — Add Artwork Packing Materials</div>
+          <div class="step-body">Add <strong>Artwork Packing Materials</strong> and amount for mirror ctns from packing materials section before hitting <strong>BYPASS</strong> on materials.</div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-label">Line 3 — Add Move Management Admin Fee</div>
+          <div class="step-body">Use <strong>MIS</strong> button. Add line: <strong>Move Management (Admin Fee)</strong><br>
+          Band: <strong><span id="r-mm-label">Purple</span></strong> — <strong><span id="r-mm-rate">$111.75</span></strong> (1 hr, labor only, truck deducted). Place between subtotal and total.</div>
+          <div class="fee-row">
+            <div class="fee-cell red-cell" id="fee-red"><div class="fc-band">Red</div><div class="fc-price">$100.35</div><div class="fc-note">1 hr · labor only</div></div>
+            <div class="fee-cell purple-cell selected" id="fee-purple"><div class="fc-band">Purple</div><div class="fc-price">$111.75</div><div class="fc-note">1 hr · labor only</div></div>
+            <div class="fee-cell blue-cell" id="fee-blue"><div class="fc-band">Blue</div><div class="fc-price">$119.45</div><div class="fc-note">1 hr · labor only</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="section-label">4-Hour Session Pricing — Nancy</div>
+    <div class="card">
+      <table class="session-table">
+        <thead>
+          <tr>
+            <th>Session Type</th>
+            <th class="th-red">Red<br><span style="font-size:9px;font-weight:400;">$139.15/hr</span></th>
+            <th class="th-purple">Purple<br><span style="font-size:9px;font-weight:400;">$141.65/hr</span></th>
+            <th class="th-blue">Blue<br><span style="font-size:9px;font-weight:400;">$149.40/hr</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <select id="session-type" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px;font-size:12px;color:var(--text);background:var(--surface2);">
+                <option>Downsizing Session</option>
+                <option>Space Planning</option>
+                <option>Onsite Vendor Coordination</option>
+                <option>Sorting &amp; Pre-Move Organization</option>
+              </select>
+            </td>
+            <td class="td-red">$556.60</td>
+            <td class="td-purple">$566.60</td>
+            <td class="td-blue">$597.60</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="plain-note">Minimum booking is 4 hours. Additional sessions or time added as needed using tariff rates. Includes 30 min travel each way. Actual hours billed at end of service.</div>
+    </div>
+
+    <div class="bottom-btns">
+      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="reset-btn" onclick="resetCalc()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const crewRates={red:[null,139.15,239.45,339.75,478.85,579.15],purple:[null,141.65,253.40,365.15,506.80,618.55],blue:[null,149.40,268.85,388.30,537.70,657.15]};
+  const mmRates={red:100.35,purple:111.75,blue:119.45};
+  const packMins={dishd:30,dishl:14,'1-5':10.5,books:7.5,'3':12,'4-5':12,'6':12,mirror:19.5,micro:7.5,wardrobe:15};
+  const unpackMins={dishd:33,dishl:11,'1-5':11.55,books:8.25,'3':7.7,'4-5':13.2,'6':16.5,mirror:11,micro:8.25,wardrobe:7.7};
+  const binConv={dishd:3,dishl:2,'1-5':1,books:1,'3':2,'4-5':3,'6':4,mirror:0,micro:0,wardrobe:0};
+  const keys=['dishd','dishl','1-5','books','3','4-5','6','mirror','micro','wardrobe'];
+  let selectedRate='purple',selectedCrew=2,currentMode='bins';
+  let totalPackMinsRaw=0,totalUnpackMinsRaw=0,totalBinsRaw=0,calculated=false;
+
+  function roundQtr(h){return Math.ceil(h*4)/4;}
+  function fmt(n){return '$'+n.toFixed(2);}
+  function getVal(id){const el=document.getElementById(id);return el?(parseFloat(el.value)||0):0;}
+
+  function setMode(mode,btn){
+    currentMode=mode;
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('mode-bins').style.display=mode==='bins'?'block':'none';
+    document.getElementById('mode-combo').style.display=mode==='combo'?'block':'none';
+    document.getElementById('mode-cb').style.display=mode==='cb'?'block':'none';
+  }
+
+  function updateRules(){
+    const weight=getVal('move-weight'),flag=weight>6000;
+    document.getElementById('rule-weight').classList.toggle('flagged',flag);
+    document.getElementById('move-weight').classList.toggle('flagged',flag);
+    if(calculated){
+      const uc=roundQtr((totalUnpackMinsRaw/60)/selectedCrew);
+      document.getElementById('rule-unpack').classList.toggle('flagged',uc>6);
+    }
+  }
+
+  function calcTotals(){
+    let pm=0,um=0,bins=0;
+    if(currentMode==='bins'){keys.forEach(k=>{const q=getVal('bins-'+k);pm+=q*packMins[k];um+=q*unpackMins[k];bins+=q*binConv[k];});}
+    else if(currentMode==='combo'){keys.forEach(k=>{const qcb=getVal('combo-cb-'+k),qbin=getVal('combo-bin-'+k);pm+=qcb*packMins[k]+qbin*packMins[k];um+=qcb*unpackMins[k]+qbin*unpackMins[k];bins+=qbin*binConv[k];});}
+    else{keys.forEach(k=>{const q=getVal('cb-'+k);pm+=q*packMins[k];um+=q*unpackMins[k];});}
+    const ib=getVal('internal-bins');pm+=ib*15;um+=ib*10;bins+=ib;
+    return{pm,um,bins};
+  }
+
+  function buildHoursGrid(){
+    const grid=document.getElementById('hours-grid');
+    grid.innerHTML='';
+    const pc=roundQtr((totalPackMinsRaw/60)/selectedCrew);
+    const uc=roundQtr((totalUnpackMinsRaw/60)/selectedCrew);
+    const bq=Math.ceil(totalBinsRaw);
+    const rh=crewRates[selectedRate][selectedCrew];
+    grid.innerHTML+=`<div class="result-card highlight"><div class="rc-label">Pack Hours</div><div class="rc-value">${pc.toFixed(2)}</div><div class="rc-sub">crew hours</div></div>`;
+    if(uc>6){const d2=roundQtr(uc-6);grid.innerHTML+=`<div class="result-card warn-card"><div class="rc-label">Unpack Day 1</div><div class="rc-value">6.00</div><div class="rc-sub">Day 2: ${d2.toFixed(2)} hrs</div></div>`;}
+    else{grid.innerHTML+=`<div class="result-card highlight"><div class="rc-label">Unpack Hours</div><div class="rc-value">${uc.toFixed(2)}</div><div class="rc-sub">crew hours</div></div>`;}
+    grid.innerHTML+=`<div class="result-card"><div class="rc-label">Total Bins</div><div class="rc-value">${bq}</div><div class="rc-sub">bin equivalents</div></div><div class="result-card"><div class="rc-label">Crew Rate</div><div class="rc-value">${fmt(rh)}</div><div class="rc-sub">per hour</div></div>`;
+  }
+
+  function buildStep1(bq,bc){
+    const b=document.getElementById('step1-body');
+    if(currentMode==='bins') b.innerHTML=`Hit <strong>BYPASS</strong> to zero out materials. Use <strong>MIS</strong> button: <strong>(${bq}) Packing Bins @ $3.50</strong> — Total: <strong>${fmt(bc)}</strong>`;
+    else if(currentMode==='combo') b.innerHTML=`Cardboard stays on estimate. No bypass needed. Use <strong>MIS</strong> button: <strong>(${bq}) Packing Bins @ $3.50</strong> — Total: <strong>${fmt(bc)}</strong>`;
+    else b.innerHTML=`Cardboard materials already on estimate. No bypass or MIS bin line needed.`;
+  }
+
+  function buildCrewButtons(){
+    const c=document.getElementById('crew-result-scroll');
+    c.innerHTML='';
+    for(let i=1;i<=5;i++){
+      const btn=document.createElement('button');
+      btn.className='crew-res-btn'+(i===selectedCrew?' selected':'');
+      btn.innerHTML=`${i} Person<div class="crew-rate">${fmt(crewRates[selectedRate][i])}</div>`;
+      btn.addEventListener('click',(sz=>()=>selectCrewResult(sz))(i));
+      c.appendChild(btn);
+    }
+  }
+
+  function selectCrewResult(size){
+    selectedCrew=size;
+    document.querySelectorAll('.crew-res-btn').forEach(b=>b.classList.toggle('selected',b.textContent.trim().startsWith(size+' Person')));
+    if(calculated){buildHoursGrid();updateRules();}
+  }
+
+  function updateBandUI(){
+    ['red','purple','blue'].forEach(b=>document.getElementById('fee-'+b).classList.toggle('selected',b===selectedRate));
+    const label=selectedRate.charAt(0).toUpperCase()+selectedRate.slice(1);
+    document.getElementById('r-mm-label').textContent=label;
+    document.getElementById('r-mm-rate').textContent=fmt(mmRates[selectedRate]);
+    buildCrewButtons();
+    if(calculated)buildHoursGrid();
+  }
+
+  function selectRate(rate,btn){
+    selectedRate=rate;
+    document.querySelectorAll('.rate-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    updateBandUI();
+  }
+
+  function calculate(){
+    const{pm,um,bins}=calcTotals();
+    totalPackMinsRaw=pm;totalUnpackMinsRaw=um;totalBinsRaw=bins;
+    calculated=true;
+    const weight=getVal('move-weight'),bq=Math.ceil(bins),bc=bq*3.5,uc=roundQtr((um/60)/selectedCrew);
+    document.getElementById('alert-weight').style.display=weight>6000?'block':'none';
+    document.getElementById('alert-bins').style.display=bins>75?'block':'none';
+    buildHoursGrid();buildStep1(bq,bc);buildCrewButtons();updateBandUI();updateRules();
+    document.getElementById('rule-unpack').classList.toggle('flagged',uc>6);
+    document.getElementById('results-section').style.display='block';
+    document.getElementById('results-section').scrollIntoView({behavior:'smooth'});
+  }
+
+  function resetCalc(){
+    document.querySelectorAll('input[type="number"]').forEach(i=>i.value='');
+    calculated=false;totalPackMinsRaw=0;totalUnpackMinsRaw=0;totalBinsRaw=0;
+    document.getElementById('results-section').style.display='none';
+    ['rule-weight','rule-stairs','rule-unpack'].forEach(id=>document.getElementById(id).classList.remove('flagged'));
+    document.getElementById('move-weight').classList.remove('flagged');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  buildCrewButtons();updateBandUI();
+</script>
+</body>
+</html>
